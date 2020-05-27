@@ -6,16 +6,15 @@
   
   <PropertyGroup>
     <PackageId>ViceCode.Analyzers</PackageId>
-    <PackageVersion>1.0.0.0</PackageVersion>
-    <Authors>LIFEfreedom</Authors>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>LIFEfreedom; ViceCode</Authors>
     <PackageLicenseUrl>https://github.com/vice-code/RoslynAnalyzers/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/vice-code/RoslynAnalyzers</PackageProjectUrl>
     <PackageIconUrl>https://github.com/vice-code/RoslynAnalyzers/blob/master/logo.128x128.png?raw=true</PackageIconUrl>
     <RepositoryUrl>https://github.com/vice-code/RoslynAnalyzers</RepositoryUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Description></Description>
-    <PackageReleaseNotes></PackageReleaseNotes>
-    <Copyright>Copyright</Copyright>
+    <Description>ViceCode.RoslynAnalyzers contains code analysis rules for convenient work with System.Data.DataRow when creating constructors and setting values to class properties.</Description>
+    <Copyright>ViceCode, 2020</Copyright>
     <PackageTags>DataRow, analyzers</PackageTags>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <Company>ViceCode</Company>
