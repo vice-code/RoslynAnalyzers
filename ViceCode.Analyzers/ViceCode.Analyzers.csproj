@@ -8,10 +8,10 @@
     <PackageId>ViceCode.Analyzers</PackageId>
     <PackageVersion>1.0.0.0</PackageVersion>
     <Authors>LIFEfreedom</Authors>
-    <PackageLicenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</PackageLicenseUrl>
-    <PackageProjectUrl></PackageProjectUrl>
-    <PackageIconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</PackageIconUrl>
-    <RepositoryUrl></RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/vice-code/RoslynAnalyzers/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/vice-code/RoslynAnalyzers</PackageProjectUrl>
+    <PackageIconUrl>https://github.com/vice-code/RoslynAnalyzers/blob/master/logo.128x128.png?raw=true</PackageIconUrl>
+    <RepositoryUrl>https://github.com/vice-code/RoslynAnalyzers</RepositoryUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Description></Description>
     <PackageReleaseNotes></PackageReleaseNotes>
