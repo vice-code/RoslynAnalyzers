@@ -82,7 +82,7 @@ namespace ViceCode.Analyzers
 					return;
 				}
 
-				context.ReportDiagnostic(Diagnostic.Create(UpdateRule, constructor.GetLocation()));
+				context.ReportDiagnostic(Diagnostic.Create(UpdateRule, constructor.Identifier.GetLocation()));
 				return;
 			}
 
@@ -90,7 +90,8 @@ namespace ViceCode.Analyzers
 			if (properties.Count == 0)
 				return;     // нечего устанавливать.
 
-			context.ReportDiagnostic(Diagnostic.Create(CreateRule, context.Node.GetLocation()));
+
+			context.ReportDiagnostic(Diagnostic.Create(CreateRule, classDeclaration.Identifier.GetLocation()));
 		}
 	}
 }

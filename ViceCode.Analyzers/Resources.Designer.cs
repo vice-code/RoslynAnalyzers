@@ -61,7 +61,7 @@ namespace ViceCode.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Creates a constructor that takes System.Data.DataRow and initializes all fields..
+        ///   Looks up a localized string similar to Generates a constructor that takes System.Data.DataRow and initializes all fields..
         /// </summary>
         public static string AnalyzerDescription {
             get {
@@ -79,7 +79,7 @@ namespace ViceCode.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to can create a constructor that takes a System.Data.DataRow.
+        ///   Looks up a localized string similar to Can generate a constructor that takes a System.Data.DataRow.
         /// </summary>
         public static string AnalyzerMessageFormat {
             get {
@@ -88,7 +88,7 @@ namespace ViceCode.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to can update a constructor that takes a System.Data.DataRow.
+        ///   Looks up a localized string similar to Can update a constructor that takes a System.Data.DataRow.
         /// </summary>
         public static string AnalyzerMessageFormatUpdate {
             get {
@@ -97,7 +97,7 @@ namespace ViceCode.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Create a constructor that takes a System.Data.DataRow.
+        ///   Looks up a localized string similar to Generate a constructor that takes a System.Data.DataRow.
         /// </summary>
         public static string AnalyzerTitle {
             get {

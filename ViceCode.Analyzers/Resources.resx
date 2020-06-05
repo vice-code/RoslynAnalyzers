@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AnalyzerDescription" xml:space="preserve">
-    <value>Creates a constructor that takes System.Data.DataRow and initializes all fields.</value>
+    <value>Generates a constructor that takes System.Data.DataRow and initializes all fields.</value>
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
   <data name="AnalyzerDescriptionUpdate" xml:space="preserve">
@@ -126,15 +126,15 @@
     <comment>An optional longer localizable description of the diagnostic.</comment>
   </data>
   <data name="AnalyzerMessageFormat" xml:space="preserve">
-    <value>can create a constructor that takes a System.Data.DataRow</value>
+    <value>Can generate a constructor that takes a System.Data.DataRow</value>
     <comment>The format-able message the diagnostic displays.</comment>
   </data>
   <data name="AnalyzerMessageFormatUpdate" xml:space="preserve">
-    <value>can update a constructor that takes a System.Data.DataRow</value>
+    <value>Can update a constructor that takes a System.Data.DataRow</value>
     <comment>The format-able message the diagnostic displays.</comment>
   </data>
   <data name="AnalyzerTitle" xml:space="preserve">
-    <value>Create a constructor that takes a System.Data.DataRow</value>
+    <value>Generate a constructor that takes a System.Data.DataRow</value>
     <comment>The title of the diagnostic.</comment>
   </data>
   <data name="AnalyzerTitleUpdate" xml:space="preserve">
