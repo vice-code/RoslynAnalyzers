@@ -18,7 +18,7 @@ namespace ViceCode.Analyzers
     public class DataRowConstructorCodeFixProvider : CodeFixProvider
     {
         // <SnippetCodeFixTitle>
-        private const string titleCreate = "Create constructor(DataRow row)";
+        private const string titleCreate = "Generate constructor(DataRow row)";
         private const string titleUpdate = "Update constructor(DataRow row)";
         // </SnippetCodeFixTitle>
 
@@ -125,7 +125,23 @@ namespace ViceCode.Analyzers
 
             var root = await document.GetSyntaxRootAsync(ct);
 
-            var newRoot = root.ReplaceNode(classDeclaration, newClassDexlaration);
+            CompilationUnitSyntax newRoot = (CompilationUnitSyntax)root.ReplaceNode(classDeclaration, newClassDexlaration);
+
+            bool usingFinded = false;
+            foreach(var usingDirective in newRoot.Usings)
+            {
+                if(usingDirective.Name.ToString().Equals("System.Data"))
+                {
+					usingFinded = true;
+					break;
+				}
+			}
+
+            if(!usingFinded)
+            {
+                newRoot = newRoot.AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName("System.Data")));
+            }
+
             return document.WithSyntaxRoot(newRoot);
         }
 
