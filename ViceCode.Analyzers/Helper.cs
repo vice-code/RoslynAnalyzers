@@ -10,27 +10,40 @@ namespace ViceCode.Analyzers
     {
         internal static List<PropertyDeclarationSyntax> GetClassUnsetProperties(ClassDeclarationSyntax classDeclaration, ConstructorDeclarationSyntax constructorDeclaration)
         {
-            var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>();       // Берём только свойства.
-            var listProperties = properties.ToList();           // Свойства, которые не заданы в конструкторе.
+            var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>();          // Only properties.
+            var listProperties = properties.ToList();                                               // Properties that are not set in the constructor.
 
-            // Выполняем поиск свойств, которые не установлены в конструкторе.
-            var expressionStatementSyntaxes = constructorDeclaration.Body.Statements.OfType<ExpressionStatementSyntax>();
-            foreach (var expression in expressionStatementSyntaxes)
+            // Search for properties that are not set in the constructor.
+            foreach (var statement in constructorDeclaration.Body.Statements)
             {
-                if (!(expression.Expression is AssignmentExpressionSyntax assigment))
+                if (statement.Kind() != SyntaxKind.ExpressionStatement)
                 {
-                    // действие не является присваиванием.
                     continue;
                 }
 
+                var expression = (ExpressionStatementSyntax)statement;
+
+                if (expression.Expression.Kind() != SyntaxKind.SimpleAssignmentExpression)
+                {
+                    continue;
+                }
+
+                var assigment = (AssignmentExpressionSyntax)expression.Expression;
+
+                if(assigment.Left.Kind() != SyntaxKind.IdentifierName)
+                {
+                    continue;
+				}
+
+                var assigmentLeftIdentifierName = (IdentifierNameSyntax)assigment.Left;
+
                 foreach (var property in properties)
                 {
-                    if (assigment.Left is IdentifierNameSyntax leftNameSyntax && SyntaxFactory.AreEquivalent(leftNameSyntax.Identifier, property.Identifier))
+                    if (SyntaxFactory.AreEquivalent(assigmentLeftIdentifierName.Identifier, property.Identifier))
                     {
+                        // Remove the properties from the list, since it is set in the constructor.
                         listProperties.Remove(property);
-                        // Удаляем свойства из списка, тк оно устанавливается в конструкторе.
-                        // Переходим к следующему присваиванию.
-                        break;
+                        break;      // Go to next property assigment
                     }
                 }
             }

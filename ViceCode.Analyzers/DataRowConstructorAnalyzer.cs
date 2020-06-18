@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
+using System;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
@@ -15,8 +16,6 @@ namespace ViceCode.Analyzers
 		public const string CreateDataRowConstructorDiagnosticId = "CreateDataRowconstructor";
 		public const string UpdateDataRowConstructorDiagnosticId = "UpdateDataRowconstructor";
 
-		// You can change these strings in the Resources.resx file. If you do not want your analyzer to be localize-able, you can use regular strings for Title and MessageFormat.
-		// See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/Localizing%20Analyzers.md for more on localization
 		private static readonly LocalizableString TitleCreate = new LocalizableResourceString(nameof(Resources.AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
 		private static readonly LocalizableString MessageFormatCreate = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
 		private static readonly LocalizableString DescriptionCreate = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
@@ -46,35 +45,31 @@ namespace ViceCode.Analyzers
 			var classDeclaration = (ClassDeclarationSyntax)context.Node;
 			var semanticModel = context.SemanticModel;
 
-			var constructors = classDeclaration.Members.OfType<ConstructorDeclarationSyntax>();      // Все определения в классе, являющиеся конструкторами.
-																									 // Смотрим все конструкторы, чтобы найти Constructor(DataRow row)
-			foreach (ConstructorDeclarationSyntax constructor in constructors)
+			Lazy<INamedTypeSymbol> dataRowNamedTypeSymbol = new Lazy<INamedTypeSymbol>(() => context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName));
+
+			foreach (var member in classDeclaration.Members)
 			{
-				var parameters = constructor.ParameterList.Parameters;
+				if (member.Kind() != SyntaxKind.ConstructorDeclaration)
+					continue;
+
+				var constructorDeclaration = (ConstructorDeclarationSyntax)member;
+				var parameters = constructorDeclaration.ParameterList.Parameters;
 				if (parameters.Count != 1)
 				{
 					// Нас интересует только один параметр в конструкторе.
 					continue;
 				}
 
-				var dataRowNamedTypeSymbol = context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName);
-
-				if (dataRowNamedTypeSymbol is null)
-				{
-					// Не удалось получить информацию о типе DataRow (возможно в зависимостях нет System.Data)
-					return;
-				}
-
 				var paramSymbol = semanticModel.GetDeclaredSymbol(parameters[0]);
 				ITypeSymbol paramTypeSymbol = paramSymbol.Type;
 
-				if (!dataRowNamedTypeSymbol.Equals(paramTypeSymbol))
+				if (!SymbolEqualityComparer.Default.Equals(dataRowNamedTypeSymbol.Value, paramTypeSymbol))
 				{
 					// Единственный параметр конструктора не является DataRow, ищем дальше
 					continue;
 				}
 
-				var listProperties = Helper.GetClassUnsetProperties(classDeclaration, constructor);           // Свойства, которые не заданы в конструкторе.
+				var listProperties = Helper.GetClassUnsetProperties(classDeclaration, constructorDeclaration);           // Свойства, которые не заданы в конструкторе.
 
 				if (listProperties.Count == 0)
 				{
@@ -82,14 +77,13 @@ namespace ViceCode.Analyzers
 					return;
 				}
 
-				context.ReportDiagnostic(Diagnostic.Create(UpdateRule, constructor.Identifier.GetLocation()));
+				context.ReportDiagnostic(Diagnostic.Create(UpdateRule, constructorDeclaration.Identifier.GetLocation()));
 				return;
 			}
 
 			var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();       // Берём только свойства.
 			if (properties.Count == 0)
 				return;     // нечего устанавливать.
-
 
 			context.ReportDiagnostic(Diagnostic.Create(CreateRule, classDeclaration.Identifier.GetLocation()));
 		}
