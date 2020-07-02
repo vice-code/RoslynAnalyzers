@@ -69,13 +69,25 @@ namespace ViceCode.Analyzers
         private async Task<Document> UpdateDataRowConstructor(Document document, ClassDeclarationSyntax classDeclaration, ConstructorDeclarationSyntax constructorDeclaration, CancellationToken ct)
         {
             var unsetProperties = Helper.GetClassUnsetProperties(classDeclaration, constructorDeclaration);
-            var statements = constructorDeclaration.Body.Statements;
+
+            SyntaxTriviaList leadingTrivia;
+            SyntaxList<StatementSyntax> statements;
+
+            if (constructorDeclaration.Body is null)
+            {
+                leadingTrivia = constructorDeclaration.GetLeadingTrivia();
+            }
+            else
+            {
+                statements = constructorDeclaration.Body.Statements;
+                leadingTrivia = statements.Any() ? statements.First().GetLeadingTrivia() : constructorDeclaration.GetLeadingTrivia();
+			}
 
             foreach (var property in unsetProperties)
             {
                 var assigment = CreatePropertyAssigmentExpression(constructorDeclaration.ParameterList.Parameters[0], property);
 
-                statements = statements.Add(SyntaxFactory.ExpressionStatement(assigment).WithLeadingTrivia(constructorDeclaration.Body.Statements.First().GetLeadingTrivia()));
+                statements = statements.Add(SyntaxFactory.ExpressionStatement(assigment).WithLeadingTrivia(leadingTrivia));
             }
 
             // Копируем параметры конструктора, заменяя только Body.

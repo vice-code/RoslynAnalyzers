@@ -13,6 +13,9 @@ namespace ViceCode.Analyzers
             var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>();          // Only properties.
             var listProperties = properties.ToList();                                               // Properties that are not set in the constructor.
 
+            if (constructorDeclaration.Body is null)
+                return listProperties;
+
             // Search for properties that are not set in the constructor.
             foreach (var statement in constructorDeclaration.Body.Statements)
             {
