@@ -17,11 +17,6 @@ namespace ViceCode.Analyzers
 	[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
 	public class DataRowConstructorCodeFixProvider : CodeFixProvider
 	{
-		// <SnippetCodeFixTitle>
-		private const string titleCreate = "Generate constructor(DataRow row)";
-		private const string titleUpdate = "Update constructor(DataRow row)";
-		// </SnippetCodeFixTitle>
-
 		public sealed override ImmutableArray<string> FixableDiagnosticIds
 		{
 			get { return ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId, DataRowConstructorAnalyzer.UpdateDataRowConstructorDiagnosticId); }
@@ -45,24 +40,26 @@ namespace ViceCode.Analyzers
 
 			if (diagnostic.Id == DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId)
 			{
+				var title = string.Format("Generate {0}(DataRow row) constructor", classDeclation.Identifier.ValueText);
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix(
 					CodeAction.Create(
-						title: titleCreate,
+						title: title,
 						createChangedDocument: ct => CreateDataRowConstructor(context.Document, classDeclation, ct),
-						equivalenceKey: titleCreate),
+						equivalenceKey: title),
 					diagnostic);
 				return;
 			}
 
 			var constructorDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<ConstructorDeclarationSyntax>().First();
 
+			var key = string.Format("Update {0}(DataRow row) constructor", classDeclation.Identifier.ValueText);
 			// Register a code action that will invoke the fix.
 			context.RegisterCodeFix(
 				CodeAction.Create(
-					title: titleUpdate,
+					title: key,
 					createChangedDocument: ct => UpdateDataRowConstructor(context.Document, classDeclation, constructorDeclation, ct),
-					equivalenceKey: titleUpdate),
+					equivalenceKey: key),
 				diagnostic);
 		}
 
