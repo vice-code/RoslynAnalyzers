@@ -22,6 +22,7 @@
     <Version>1.0.0</Version>
     <AssemblyName>ViceCode.Analyzers</AssemblyName>
     <RootNamespace>ViceCode.Analyzers</RootNamespace>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
    
   <ItemGroup>

@@ -141,4 +141,13 @@
     <value>Update a constructor that takes a System.Data.DataRow</value>
     <comment>The title of the diagnostic.</comment>
   </data>
+  <data name="SqlTypeMatchingDescription" xml:space="preserve">
+    <value>Check if the types in the SQL expression are correct</value>
+  </data>
+  <data name="SqlTypeMatchingMessageFormat" xml:space="preserve">
+    <value>Data type mismatch in SQL expression</value>
+  </data>
+  <data name="SqlTypeMatchingTitle" xml:space="preserve">
+    <value>SQL expression type matching</value>
+  </data>
 </root>

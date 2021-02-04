@@ -113,5 +113,32 @@ namespace ViceCode.Analyzers {
                 return ResourceManager.GetString("AnalyzerTitleUpdate", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check if the types in the SQL expression are correct.
+        /// </summary>
+        public static string SqlTypeMatchingDescription {
+            get {
+                return ResourceManager.GetString("SqlTypeMatchingDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data type mismatch in SQL expression.
+        /// </summary>
+        public static string SqlTypeMatchingMessageFormat {
+            get {
+                return ResourceManager.GetString("SqlTypeMatchingMessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SQL expression type matching.
+        /// </summary>
+        public static string SqlTypeMatchingTitle {
+            get {
+                return ResourceManager.GetString("SqlTypeMatchingTitle", resourceCulture);
+            }
+        }
     }
 }
