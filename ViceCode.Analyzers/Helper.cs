@@ -8,9 +8,9 @@ namespace ViceCode.Analyzers
 {
     internal static class Helper
     {
-        internal static List<PropertyDeclarationSyntax> GetClassUnsetProperties(ClassDeclarationSyntax classDeclaration, ConstructorDeclarationSyntax constructorDeclaration)
+        internal static List<PropertyDeclarationSyntax> GetClassUnsetProperties(TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration)
         {
-            var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>();          // Only properties.
+            var properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>();          // Only properties.
             var listProperties = properties.ToList();                                               // Properties that are not set in the constructor.
 
             if (constructorDeclaration.Body is null)
