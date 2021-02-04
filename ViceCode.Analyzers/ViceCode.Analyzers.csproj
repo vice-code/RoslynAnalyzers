@@ -22,10 +22,11 @@
     <Version>1.0.0</Version>
     <AssemblyName>ViceCode.Analyzers</AssemblyName>
     <RootNamespace>ViceCode.Analyzers</RootNamespace>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
    
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.6.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" PrivateAssets="all" />
     <PackageReference Update="NETStandard.Library" PrivateAssets="all" />
   </ItemGroup>
 
