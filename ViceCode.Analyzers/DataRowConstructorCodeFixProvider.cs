@@ -30,22 +30,22 @@ namespace ViceCode.Analyzers
 
 		public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
 		{
-			var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken);
+			var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
 			var diagnostic = context.Diagnostics.First();
 			var diagnosticSpan = diagnostic.Location.SourceSpan;
 
 			// Find the type declaration identified by the diagnostic.
-			var classDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<ClassDeclarationSyntax>().First();
+			var typeDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
 
 			if (diagnostic.Id == DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId)
 			{
-				var title = string.Format("Generate {0}(DataRow row) constructor", classDeclation.Identifier.ValueText);
+				var title = string.Format("Generate {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
 				// Register a code action that will invoke the fix.
 				context.RegisterCodeFix(
 					CodeAction.Create(
 						title: title,
-						createChangedDocument: ct => CreateDataRowConstructor(context.Document, classDeclation, ct),
+						createChangedDocument: ct => CreateDataRowConstructor(context.Document, typeDeclation, ct),
 						equivalenceKey: title),
 					diagnostic);
 				return;
@@ -53,19 +53,19 @@ namespace ViceCode.Analyzers
 
 			var constructorDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<ConstructorDeclarationSyntax>().First();
 
-			var key = string.Format("Update {0}(DataRow row) constructor", classDeclation.Identifier.ValueText);
+			var key = string.Format("Update {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
 			// Register a code action that will invoke the fix.
 			context.RegisterCodeFix(
 				CodeAction.Create(
 					title: key,
-					createChangedDocument: ct => UpdateDataRowConstructor(context.Document, classDeclation, constructorDeclation, ct),
+					createChangedDocument: ct => UpdateDataRowConstructor(context.Document, typeDeclation, constructorDeclation, ct),
 					equivalenceKey: key),
 				diagnostic);
 		}
 
-		private async Task<Document> UpdateDataRowConstructor(Document document, ClassDeclarationSyntax classDeclaration, ConstructorDeclarationSyntax constructorDeclaration, CancellationToken ct)
+		private async Task<Document> UpdateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, CancellationToken ct)
 		{
-			var unsetProperties = Helper.GetClassUnsetProperties(classDeclaration, constructorDeclaration);
+			var unsetProperties = Helper.GetClassUnsetProperties(typeDeclaration, constructorDeclaration);
 
 			SyntaxTriviaList leadingTrivia;
 			SyntaxList<StatementSyntax> statements;
@@ -98,7 +98,7 @@ namespace ViceCode.Analyzers
 			return document.WithSyntaxRoot(newRoot);
 		}
 
-		private async Task<Document> CreateDataRowConstructor(Document document, ClassDeclarationSyntax classDeclaration, CancellationToken ct)
+		private async Task<Document> CreateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, CancellationToken ct)
 		{
 			// attributes;
 			var attributes = new SyntaxList<AttributeListSyntax>();
@@ -109,7 +109,7 @@ namespace ViceCode.Analyzers
 			var modifiers = new SyntaxTokenList(publicModifier);
 
 			// Identifier;
-			var identifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, classDeclaration.Identifier.Text, classDeclaration.Identifier.ValueText, SyntaxTriviaList.Empty)/*.WithLeadingTrivia().WithTrailingTrivia()*/;
+			var identifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, typeDeclaration.Identifier.Text, typeDeclaration.Identifier.ValueText, SyntaxTriviaList.Empty)/*.WithLeadingTrivia().WithTrailingTrivia()*/;
 
 			// ParameterList;
 			var parameterName = SyntaxFactory.Identifier("row").WithTrailingTrivia().WithLeadingTrivia();
@@ -118,7 +118,7 @@ namespace ViceCode.Analyzers
 			var parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[] { parameter }));
 
 			// Body block
-			var properties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
+			var properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
 			var statements = new List<StatementSyntax>(properties.Count);
 
 			foreach (var property in properties)
@@ -132,11 +132,11 @@ namespace ViceCode.Analyzers
 
 			var fpt = properties.First().GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).First();
 
-			var newClassDexlaration = classDeclaration.InsertNodesBefore(classDeclaration.Members.FirstOrDefault(), new[] { constructor.WithLeadingTrivia(fpt) });
+			var newClassDexlaration = typeDeclaration.InsertNodesBefore(typeDeclaration.Members.FirstOrDefault(), new[] { constructor.WithLeadingTrivia(fpt) });
 
 			var root = await document.GetSyntaxRootAsync(ct);
 
-			CompilationUnitSyntax newRoot = (CompilationUnitSyntax)root.ReplaceNode(classDeclaration, newClassDexlaration);
+			CompilationUnitSyntax newRoot = (CompilationUnitSyntax)root.ReplaceNode(typeDeclaration, newClassDexlaration);
 
 			bool usingFinded = false;
 			foreach (var usingDirective in newRoot.Usings)
