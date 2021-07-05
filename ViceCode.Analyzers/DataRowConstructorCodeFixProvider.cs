@@ -14,168 +14,171 @@ using System.Threading.Tasks;
 
 namespace ViceCode.Analyzers
 {
-	[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
-	public class DataRowConstructorCodeFixProvider : CodeFixProvider
-	{
-		public sealed override ImmutableArray<string> FixableDiagnosticIds
-		{
-			get { return ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId, DataRowConstructorAnalyzer.UpdateDataRowConstructorDiagnosticId); }
-		}
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
+    public class DataRowConstructorCodeFixProvider : CodeFixProvider
+    {
+        public sealed override ImmutableArray<string> FixableDiagnosticIds
+        {
+            get { return ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId, DataRowConstructorAnalyzer.UpdateDataRowConstructorDiagnosticId); }
+        }
 
-		public sealed override FixAllProvider GetFixAllProvider()
-		{
-			// See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
-			return WellKnownFixAllProviders.BatchFixer;
-		}
+        public sealed override FixAllProvider GetFixAllProvider()
+        {
+            // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
+            return WellKnownFixAllProviders.BatchFixer;
+        }
 
-		public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
-		{
-			var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
+        {
+            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-			var diagnostic = context.Diagnostics.First();
-			var diagnosticSpan = diagnostic.Location.SourceSpan;
+            var diagnostic = context.Diagnostics.First();
+            var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-			// Find the type declaration identified by the diagnostic.
-			var typeDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+            // Find the type declaration identified by the diagnostic.
+            var typeDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
 
-			if (diagnostic.Id == DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId)
-			{
-				var title = string.Format("Generate {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
-				// Register a code action that will invoke the fix.
-				context.RegisterCodeFix(
-					CodeAction.Create(
-						title: title,
-						createChangedDocument: ct => CreateDataRowConstructor(context.Document, typeDeclation, ct),
-						equivalenceKey: title),
-					diagnostic);
-				return;
-			}
+            if (diagnostic.Id == DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId)
+            {
+                var title = string.Format("Generate {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
+                // Register a code action that will invoke the fix.
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title: title,
+                        createChangedDocument: ct => CreateDataRowConstructor(context.Document, typeDeclation, ct),
+                        equivalenceKey: title),
+                    diagnostic);
+                return;
+            }
 
-			var constructorDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<ConstructorDeclarationSyntax>().First();
+            var constructorDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<ConstructorDeclarationSyntax>().First();
 
-			var key = string.Format("Update {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
-			// Register a code action that will invoke the fix.
-			context.RegisterCodeFix(
-				CodeAction.Create(
-					title: key,
-					createChangedDocument: ct => UpdateDataRowConstructor(context.Document, typeDeclation, constructorDeclation, ct),
-					equivalenceKey: key),
-				diagnostic);
-		}
+            var key = string.Format("Update {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
+            // Register a code action that will invoke the fix.
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: key,
+                    createChangedDocument: ct => UpdateDataRowConstructor(context.Document, typeDeclation, constructorDeclation, ct),
+                    equivalenceKey: key),
+                diagnostic);
+        }
 
-		private async Task<Document> UpdateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, CancellationToken ct)
-		{
-			var unsetProperties = Helper.GetClassUnsetProperties(typeDeclaration, constructorDeclaration);
+        private async Task<Document> UpdateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, CancellationToken ct)
+        {
+            var unsetProperties = Helper.GetClassUnsetProperties(typeDeclaration, constructorDeclaration, true);
 
-			SyntaxTriviaList leadingTrivia;
-			SyntaxList<StatementSyntax> statements;
+            SyntaxTriviaList leadingTrivia;
+            SyntaxList<StatementSyntax> statements;
 
-			if (constructorDeclaration.Body is null)
-			{
-				leadingTrivia = constructorDeclaration.GetLeadingTrivia();
-			}
-			else
-			{
-				statements = constructorDeclaration.Body.Statements;
-				leadingTrivia = statements.Any() ? statements.First().GetLeadingTrivia() : constructorDeclaration.GetLeadingTrivia();
-			}
+            if (constructorDeclaration.Body is null)
+            {
+                leadingTrivia = constructorDeclaration.GetLeadingTrivia();
+            }
+            else
+            {
+                statements = constructorDeclaration.Body.Statements;
+                leadingTrivia = statements.Any() ? statements.First().GetLeadingTrivia() : constructorDeclaration.GetLeadingTrivia();
+            }
 
-			foreach (var property in unsetProperties)
-			{
-				var assigment = CreatePropertyAssigmentExpression(constructorDeclaration.ParameterList.Parameters[0], property);
+            foreach (var property in unsetProperties)
+            {
+                var assigment = CreatePropertyAssigmentExpression(constructorDeclaration.ParameterList.Parameters[0], property);
 
-				statements = statements.Add(SyntaxFactory.ExpressionStatement(assigment).WithLeadingTrivia(leadingTrivia));
-			}
+                statements = statements.Add(SyntaxFactory.ExpressionStatement(assigment).WithLeadingTrivia(leadingTrivia));
+            }
 
-			// Копируем параметры конструктора, заменяя только Body.
-			var updatedConstructor = SyntaxFactory.ConstructorDeclaration(constructorDeclaration.AttributeLists, constructorDeclaration.Modifiers, constructorDeclaration.Identifier, constructorDeclaration.ParameterList, constructorDeclaration.Initializer, SyntaxFactory.Block(statements));
+            // Копируем параметры конструктора, заменяя только Body.
+            var updatedConstructor = SyntaxFactory.ConstructorDeclaration(constructorDeclaration.AttributeLists, constructorDeclaration.Modifiers, constructorDeclaration.Identifier, constructorDeclaration.ParameterList, constructorDeclaration.Initializer, SyntaxFactory.Block(statements));
 
-			// Replace the old constructor declaration with the new local declaration.
-			var oldRoot = await document.GetSyntaxRootAsync(ct);
-			var newRoot = oldRoot.ReplaceNode(constructorDeclaration, updatedConstructor);
+            // Replace the old constructor declaration with the new local declaration.
+            var oldRoot = await document.GetSyntaxRootAsync(ct);
+            var newRoot = oldRoot.ReplaceNode(constructorDeclaration, updatedConstructor);
 
-			// Return document with transformed tree.
-			return document.WithSyntaxRoot(newRoot);
-		}
+            // Return document with transformed tree.
+            return document.WithSyntaxRoot(newRoot);
+        }
 
-		private async Task<Document> CreateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, CancellationToken ct)
-		{
-			// attributes;
-			var attributes = new SyntaxList<AttributeListSyntax>();
+        private async Task<Document> CreateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, CancellationToken ct)
+        {
+            // attributes;
+            var attributes = new SyntaxList<AttributeListSyntax>();
 
-			// Modifiers;
-			const string publicText = "public ";
-			var publicModifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, publicText, publicText, SyntaxTriviaList.Empty);
-			var modifiers = new SyntaxTokenList(publicModifier);
+            // Modifiers;
+            const string publicText = "public ";
+            var publicModifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, publicText, publicText, SyntaxTriviaList.Empty);
+            var modifiers = new SyntaxTokenList(publicModifier);
 
-			// Identifier;
-			var identifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, typeDeclaration.Identifier.Text, typeDeclaration.Identifier.ValueText, SyntaxTriviaList.Empty)/*.WithLeadingTrivia().WithTrailingTrivia()*/;
+            // Identifier;
+            var identifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, typeDeclaration.Identifier.Text, typeDeclaration.Identifier.ValueText, SyntaxTriviaList.Empty)/*.WithLeadingTrivia().WithTrailingTrivia()*/;
 
-			// ParameterList;
-			var parameterName = SyntaxFactory.Identifier("row").WithTrailingTrivia().WithLeadingTrivia();
-			var parameterType = SyntaxFactory.IdentifierName(typeof(DataRow).Name);
-			var parameter = SyntaxFactory.Parameter(new SyntaxList<AttributeListSyntax>(), new SyntaxTokenList(), parameterType, parameterName, null);
-			var parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[] { parameter }));
+            // ParameterList;
+            var parameterName = SyntaxFactory.Identifier("row").WithTrailingTrivia().WithLeadingTrivia();
+            var parameterType = SyntaxFactory.IdentifierName(typeof(DataRow).Name);
+            var parameter = SyntaxFactory.Parameter(new SyntaxList<AttributeListSyntax>(), new SyntaxTokenList(), parameterType, parameterName, null);
+            var parameters = SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(new[] { parameter }));
 
-			// Body block
-			var properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
-			var statements = new List<StatementSyntax>(properties.Count);
+            // Body block
+            var properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
+            var statements = new List<StatementSyntax>(properties.Count);
 
-			foreach (var property in properties)
-			{
-				statements.Add(SyntaxFactory.ExpressionStatement(CreatePropertyAssigmentExpression(parameter, SyntaxFactory.PropertyDeclaration(property.Type, property.Identifier))));
-			}
+            foreach (var property in properties)
+            {
+                if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
+                    continue;
 
-			var block = SyntaxFactory.Block(statements);
+                statements.Add(SyntaxFactory.ExpressionStatement(CreatePropertyAssigmentExpression(parameter, SyntaxFactory.PropertyDeclaration(property.Type, property.Identifier))));
+            }
 
-			var constructor = SyntaxFactory.ConstructorDeclaration(attributes, modifiers, identifier, parameters, null, block);
+            var block = SyntaxFactory.Block(statements);
 
-			var fpt = properties.First().GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).First();
+            var constructor = SyntaxFactory.ConstructorDeclaration(attributes, modifiers, identifier, parameters, null, block);
 
-			var newClassDexlaration = typeDeclaration.InsertNodesBefore(typeDeclaration.Members.FirstOrDefault(), new[] { constructor.WithLeadingTrivia(fpt) });
+            var fpt = properties.First().GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).First();
 
-			var root = await document.GetSyntaxRootAsync(ct);
+            var newClassDexlaration = typeDeclaration.InsertNodesBefore(typeDeclaration.Members.FirstOrDefault(), new[] { constructor.WithLeadingTrivia(fpt) });
 
-			CompilationUnitSyntax newRoot = (CompilationUnitSyntax)root.ReplaceNode(typeDeclaration, newClassDexlaration);
+            var root = await document.GetSyntaxRootAsync(ct);
 
-			bool usingFinded = false;
-			foreach (var usingDirective in newRoot.Usings)
-			{
-				if (usingDirective.Name.ToString().Equals("System.Data"))
-				{
-					usingFinded = true;
-					break;
-				}
-			}
+            CompilationUnitSyntax newRoot = (CompilationUnitSyntax)root.ReplaceNode(typeDeclaration, newClassDexlaration);
 
-			if (!usingFinded)
-			{
-				newRoot = newRoot.AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName("System.Data")));
-			}
+            bool usingFinded = false;
+            foreach (var usingDirective in newRoot.Usings)
+            {
+                if (usingDirective.Name.ToString().Equals("System.Data"))
+                {
+                    usingFinded = true;
+                    break;
+                }
+            }
 
-			return document.WithSyntaxRoot(newRoot);
-		}
+            if (!usingFinded)
+            {
+                newRoot = newRoot.AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName("System.Data")));
+            }
 
-		private static AssignmentExpressionSyntax CreatePropertyAssigmentExpression(ParameterSyntax parameter, PropertyDeclarationSyntax property)
-		{
-			var left = SyntaxFactory.IdentifierName(property.Identifier);
+            return document.WithSyntaxRoot(newRoot);
+        }
 
-			// GenericName
-			var typeSeparatedList = SyntaxFactory.SeparatedList(new[] { property.Type });                                                       // {property type}
-			var typeArgumentList = SyntaxFactory.TypeArgumentList(typeSeparatedList);                                                           // <{property type}>
-			var generic = SyntaxFactory.Identifier("Field");                                                                                    // Field
-			var genericName = SyntaxFactory.GenericName(generic, typeArgumentList);                                                             // Field<{Property type}>
+        private static AssignmentExpressionSyntax CreatePropertyAssigmentExpression(ParameterSyntax parameter, PropertyDeclarationSyntax property)
+        {
+            var left = SyntaxFactory.IdentifierName(property.Identifier);
 
-			var rowParam = SyntaxFactory.IdentifierName(parameter.Identifier);                                                                  // row
-			var memberAccess = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, rowParam, genericName);            // add Field<{Property type}> to row
-			var text = $"\"{property.Identifier.Text}\"";                                                                                       // ( "{Property name}")
-			var argName = SyntaxFactory.Token(SyntaxTriviaList.Empty, SyntaxKind.StringLiteralToken, text, text, SyntaxTriviaList.Empty);
-			var argument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, argName));
-			var separatedList = SyntaxFactory.SeparatedList(new[] { argument });
-			var argumentList = SyntaxFactory.ArgumentList(separatedList);
+            // GenericName
+            var typeSeparatedList = SyntaxFactory.SeparatedList(new[] { property.Type });                                                       // {property type}
+            var typeArgumentList = SyntaxFactory.TypeArgumentList(typeSeparatedList);                                                           // <{property type}>
+            var generic = SyntaxFactory.Identifier("Field");                                                                                    // Field
+            var genericName = SyntaxFactory.GenericName(generic, typeArgumentList);                                                             // Field<{Property type}>
 
-			var right = SyntaxFactory.InvocationExpression(memberAccess, argumentList);                                                         // row.Field<{property type}>("{property name}");
-			return SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, left, right);
-		}
-	}
+            var rowParam = SyntaxFactory.IdentifierName(parameter.Identifier);                                                                  // row
+            var memberAccess = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, rowParam, genericName);            // add Field<{Property type}> to row
+            var text = $"\"{property.Identifier.Text}\"";                                                                                       // ( "{Property name}")
+            var argName = SyntaxFactory.Token(SyntaxTriviaList.Empty, SyntaxKind.StringLiteralToken, text, text, SyntaxTriviaList.Empty);
+            var argument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, argName));
+            var separatedList = SyntaxFactory.SeparatedList(new[] { argument });
+            var argumentList = SyntaxFactory.ArgumentList(separatedList);
+
+            var right = SyntaxFactory.InvocationExpression(memberAccess, argumentList);                                                         // row.Field<{property type}>("{property name}");
+            return SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, left, right);
+        }
+    }
 }
