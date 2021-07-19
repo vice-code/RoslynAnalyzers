@@ -8,10 +8,21 @@ namespace ViceCode.Analyzers
 {
     internal static class Helper
     {
-        internal static List<PropertyDeclarationSyntax> GetClassUnsetProperties(TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration)
+        internal static List<PropertyDeclarationSyntax> GetClassUnsetProperties(TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, bool ignoreGetOnly = false)
         {
             var properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>();          // Only properties.
             var listProperties = properties.ToList();                                               // Properties that are not set in the constructor.
+
+            if (ignoreGetOnly)
+            {
+                foreach (var property in properties)
+                {
+                    if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
+                    {
+                        listProperties.Remove(property);
+                    }
+                }
+            }
 
             if (constructorDeclaration.Body is null)
                 return listProperties;
@@ -33,10 +44,10 @@ namespace ViceCode.Analyzers
 
                 var assigment = (AssignmentExpressionSyntax)expression.Expression;
 
-                if(assigment.Left.Kind() != SyntaxKind.IdentifierName)
+                if (assigment.Left.Kind() != SyntaxKind.IdentifierName)
                 {
                     continue;
-				}
+                }
 
                 var assigmentLeftIdentifierName = (IdentifierNameSyntax)assigment.Left;
 
