@@ -11,8 +11,10 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ViceCode.Analyzers.Rules.DataRowConstructor;
+using ViceCode.Analyzers.Utils;
 
-namespace ViceCode.Analyzers
+namespace ViceCode.Analyzers.Rules.DataRowConstructor
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
     public class DataRowConstructorCodeFixProvider : CodeFixProvider

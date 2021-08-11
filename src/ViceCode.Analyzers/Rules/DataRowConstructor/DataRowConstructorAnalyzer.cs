@@ -7,8 +7,9 @@ using System;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
+using ViceCode.Analyzers.Utils;
 
-namespace ViceCode.Analyzers
+namespace ViceCode.Analyzers.Rules.DataRowConstructor
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DataRowConstructorAnalyzer : DiagnosticAnalyzer

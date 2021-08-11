@@ -4,8 +4,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using ViceCode.Analyzers;
 
-namespace ViceCode.Analyzers
+namespace ViceCode.Analyzers.Rules.SqlTypeMatching
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class SqlTypeMatchingAnalyzer : DiagnosticAnalyzer
