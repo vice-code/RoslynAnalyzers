@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using ViceCode.Analyzers;
 
 namespace ViceCode.Analyzers.Rules.SqlTypeMatching
 {
@@ -19,11 +18,11 @@ namespace ViceCode.Analyzers.Rules.SqlTypeMatching
 
         private const string Category = "Usage";
 
-        private static DiagnosticDescriptor SqlTypeMatching = new DiagnosticDescriptor(
+        private static readonly DiagnosticDescriptor SqlTypeMatching = new DiagnosticDescriptor(
             SqlTypeMatchingDiagnosticId,
             TitleCreate,
             MessageFormatCreate,
-            Category, 
+            Category,
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
             description: DescriptionCreate);
@@ -39,15 +38,15 @@ namespace ViceCode.Analyzers.Rules.SqlTypeMatching
 
         private void AnalyzeSqlTypeMatching(SyntaxNodeAnalysisContext context)
         {
-            var expression = (AssignmentExpressionSyntax)context.Node;
+            AssignmentExpressionSyntax expression = (AssignmentExpressionSyntax)context.Node;
 
             if (expression.Left is MemberAccessExpressionSyntax leftExpression && leftExpression.Expression is InvocationExpressionSyntax addExpression)
             {
                 if (addExpression.ArgumentList.Arguments.Count < 1)
                     return;
 
-                var dbParameterMetaName = context.Compilation.GetTypeByMetadataName(typeof(DbParameter).FullName);
-                var valueSymbol = context.SemanticModel.GetSymbolInfo(leftExpression).Symbol; // command.Parameters.Add().|Value|
+                INamedTypeSymbol dbParameterMetaName = context.Compilation.GetTypeByMetadataName(typeof(DbParameter).FullName);
+                ISymbol valueSymbol = context.SemanticModel.GetSymbolInfo(leftExpression).Symbol; // command.Parameters.Add().|Value|
 
                 if (valueSymbol is null)
                     return;
@@ -79,7 +78,7 @@ namespace ViceCode.Analyzers.Rules.SqlTypeMatching
 
                     if (!IsValid(rightExpressionType, sqlType.Name.Identifier.ValueText))
                     {
-                        var diagnostic = Diagnostic.Create(SqlTypeMatching, expression.GetLocation());
+                        Diagnostic diagnostic = Diagnostic.Create(SqlTypeMatching, expression.GetLocation());
                         context.ReportDiagnostic(diagnostic);
                     }
                 }

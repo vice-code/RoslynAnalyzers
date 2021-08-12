@@ -1,12 +1,11 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
-
-using System;
+﻿using System;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using ViceCode.Analyzers.Utils;
 
 namespace ViceCode.Analyzers.Rules.DataRowConstructor
@@ -26,8 +25,8 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
 
         private const string Category = "Usage";
 
-        private static DiagnosticDescriptor CreateRule = new DiagnosticDescriptor(CreateDataRowConstructorDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionCreate);
-        private static DiagnosticDescriptor UpdateRule = new DiagnosticDescriptor(UpdateDataRowConstructorDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionUpdate);
+        private static readonly DiagnosticDescriptor CreateRule = new DiagnosticDescriptor(CreateDataRowConstructorDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionCreate);
+        private static readonly DiagnosticDescriptor UpdateRule = new DiagnosticDescriptor(UpdateDataRowConstructorDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionUpdate);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(CreateRule, UpdateRule); } }
 
@@ -44,25 +43,25 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
 
         private void AnalyzeNodeForClass(SyntaxNodeAnalysisContext context)
         {
-            var classDeclaration = (ClassDeclarationSyntax)context.Node;
-            var semanticModel = context.SemanticModel;
+            ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)context.Node;
+            SemanticModel semanticModel = context.SemanticModel;
 
             Lazy<INamedTypeSymbol> dataRowNamedTypeSymbol = new Lazy<INamedTypeSymbol>(() => context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName));
 
-            foreach (var member in classDeclaration.Members)
+            foreach (MemberDeclarationSyntax member in classDeclaration.Members)
             {
                 if (member.Kind() != SyntaxKind.ConstructorDeclaration)
                     continue;
 
-                var constructorDeclaration = (ConstructorDeclarationSyntax)member;
-                var parameters = constructorDeclaration.ParameterList.Parameters;
+                ConstructorDeclarationSyntax constructorDeclaration = (ConstructorDeclarationSyntax)member;
+                SeparatedSyntaxList<ParameterSyntax> parameters = constructorDeclaration.ParameterList.Parameters;
                 if (parameters.Count != 1)
                 {
                     // Нас интересует только один параметр в конструкторе.
                     continue;
                 }
 
-                var paramSymbol = semanticModel.GetDeclaredSymbol(parameters[0]);
+                IParameterSymbol paramSymbol = semanticModel.GetDeclaredSymbol(parameters[0]);
                 ITypeSymbol paramTypeSymbol = paramSymbol.Type;
 
                 if (!SymbolEqualityComparer.Default.Equals(dataRowNamedTypeSymbol.Value, paramTypeSymbol))
@@ -71,7 +70,7 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
                     continue;
                 }
 
-                var listProperties = Helper.GetClassUnsetProperties(classDeclaration, constructorDeclaration, ignoreGetOnly: true);           // Свойства, которые не заданы в конструкторе.
+                System.Collections.Generic.List<PropertyDeclarationSyntax> listProperties = Helper.GetClassUnsetProperties(classDeclaration, constructorDeclaration, ignoreGetOnly: true);           // Свойства, которые не заданы в конструкторе.
 
                 if (listProperties.Count == 0)
                 {
@@ -83,10 +82,10 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
                 return;
             }
 
-            var rawProperties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
-            var properties = rawProperties.ToList();
+            System.Collections.Generic.IEnumerable<PropertyDeclarationSyntax> rawProperties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
+            System.Collections.Generic.List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
 
-            foreach (var property in rawProperties)
+            foreach (PropertyDeclarationSyntax property in rawProperties)
             {
                 if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
                     properties.Remove(property);
@@ -100,25 +99,25 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
 
         private void AnalyzeNodeForRecord(SyntaxNodeAnalysisContext context)
         {
-            var recordDeclaration = (RecordDeclarationSyntax)context.Node;
-            var semanticModel = context.SemanticModel;
+            RecordDeclarationSyntax recordDeclaration = (RecordDeclarationSyntax)context.Node;
+            SemanticModel semanticModel = context.SemanticModel;
 
             Lazy<INamedTypeSymbol> dataRowNamedTypeSymbol = new Lazy<INamedTypeSymbol>(() => context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName));
 
-            foreach (var member in recordDeclaration.Members)
+            foreach (MemberDeclarationSyntax member in recordDeclaration.Members)
             {
                 if (member.Kind() != SyntaxKind.ConstructorDeclaration)
                     continue;
 
-                var constructorDeclaration = (ConstructorDeclarationSyntax)member;
-                var parameters = constructorDeclaration.ParameterList.Parameters;
+                ConstructorDeclarationSyntax constructorDeclaration = (ConstructorDeclarationSyntax)member;
+                SeparatedSyntaxList<ParameterSyntax> parameters = constructorDeclaration.ParameterList.Parameters;
                 if (parameters.Count != 1)
                 {
                     // Нас интересует только один параметр в конструкторе.
                     continue;
                 }
 
-                var paramSymbol = semanticModel.GetDeclaredSymbol(parameters[0]);
+                IParameterSymbol paramSymbol = semanticModel.GetDeclaredSymbol(parameters[0]);
                 ITypeSymbol paramTypeSymbol = paramSymbol.Type;
 
                 if (!SymbolEqualityComparer.Default.Equals(dataRowNamedTypeSymbol.Value, paramTypeSymbol))
@@ -127,7 +126,7 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
                     continue;
                 }
 
-                var listProperties = Helper.GetClassUnsetProperties(recordDeclaration, constructorDeclaration, ignoreGetOnly: true);           // Свойства, которые не заданы в конструкторе.
+                System.Collections.Generic.List<PropertyDeclarationSyntax> listProperties = Helper.GetClassUnsetProperties(recordDeclaration, constructorDeclaration, ignoreGetOnly: true);           // Свойства, которые не заданы в конструкторе.
 
                 if (listProperties.Count == 0)
                 {
@@ -139,10 +138,10 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
                 return;
             }
 
-            var rawProperties = recordDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
-            var properties = rawProperties.ToList();
+            System.Collections.Generic.IEnumerable<PropertyDeclarationSyntax> rawProperties = recordDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
+            System.Collections.Generic.List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
 
-            foreach (var property in rawProperties)
+            foreach (PropertyDeclarationSyntax property in rawProperties)
             {
                 if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
                     properties.Remove(property);
