@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -8,16 +8,20 @@ namespace ViceCode.Analyzers.Utils
 {
     internal static class Helper
     {
-        internal static List<PropertyDeclarationSyntax> GetClassUnsetProperties(TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, bool ignoreGetOnly = false)
+        internal static List<PropertyDeclarationSyntax> GetTypeDeclarationUnsetProperties(TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, bool ignoreGetOnly = false)
         {
-            IEnumerable<PropertyDeclarationSyntax> properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>();          // Only properties.
-            List<PropertyDeclarationSyntax> listProperties = properties.ToList();                                               // Properties that are not set in the constructor.
+            IEnumerable<PropertyDeclarationSyntax> properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Only properties.
+            List<PropertyDeclarationSyntax> listProperties = properties.ToList(); // Properties that are not set in the constructor.
 
             if (ignoreGetOnly)
             {
                 foreach (PropertyDeclarationSyntax property in properties)
                 {
-                    if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
+                    if (property.AccessorList is null)
+                        continue;
+
+                    if ((property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].IsKind(SyntaxKind.GetAccessorDeclaration))
+                        || (property.ExpressionBody is not null))
                     {
                         listProperties.Remove(property);
                     }
@@ -30,24 +34,18 @@ namespace ViceCode.Analyzers.Utils
             // Search for properties that are not set in the constructor.
             foreach (StatementSyntax statement in constructorDeclaration.Body.Statements)
             {
-                if (statement.Kind() != SyntaxKind.ExpressionStatement)
-                {
+                if (!statement.IsKind(SyntaxKind.ExpressionStatement))
                     continue;
-                }
 
                 ExpressionStatementSyntax expression = (ExpressionStatementSyntax)statement;
 
-                if (expression.Expression.Kind() != SyntaxKind.SimpleAssignmentExpression)
-                {
+                if (!expression.Expression.IsKind(SyntaxKind.SimpleAssignmentExpression))
                     continue;
-                }
 
                 AssignmentExpressionSyntax assigment = (AssignmentExpressionSyntax)expression.Expression;
 
-                if (assigment.Left.Kind() != SyntaxKind.IdentifierName)
-                {
+                if (!assigment.Left.IsKind(SyntaxKind.IdentifierName))
                     continue;
-                }
 
                 IdentifierNameSyntax assigmentLeftIdentifierName = (IdentifierNameSyntax)assigment.Left;
 
@@ -57,7 +55,7 @@ namespace ViceCode.Analyzers.Utils
                     {
                         // Remove the properties from the list, since it is set in the constructor.
                         listProperties.Remove(property);
-                        break;      // Go to next property assigment
+                        break; // Go to next property assigment
                     }
                 }
             }

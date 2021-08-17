@@ -18,10 +18,7 @@ namespace ViceCode.Analyzers.Rules
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
     public class DataRowConstructorCodeFixProvider : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds
-        {
-            get { return ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId, DataRowConstructorAnalyzer.UpdateDataRowConstructorDiagnosticId); }
-        }
+        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId, DataRowConstructorAnalyzer.UpdateDataRowConstructorDiagnosticId);
 
         public sealed override FixAllProvider GetFixAllProvider()
         {
@@ -66,7 +63,7 @@ namespace ViceCode.Analyzers.Rules
 
         private async Task<Document> UpdateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, ConstructorDeclarationSyntax constructorDeclaration, CancellationToken ct)
         {
-            List<PropertyDeclarationSyntax> unsetProperties = Helper.GetClassUnsetProperties(typeDeclaration, constructorDeclaration, true);
+            List<PropertyDeclarationSyntax> unsetProperties = Helper.GetTypeDeclarationUnsetProperties(typeDeclaration, constructorDeclaration, true);
 
             SyntaxTriviaList leadingTrivia;
             SyntaxList<StatementSyntax> statements;
@@ -124,8 +121,14 @@ namespace ViceCode.Analyzers.Rules
 
             foreach (PropertyDeclarationSyntax property in properties)
             {
-                if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
+                if (property.AccessorList is null)
                     continue;
+
+                if ((property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].IsKind(SyntaxKind.GetAccessorDeclaration))
+                    || (property.ExpressionBody is not null))
+                {
+                    continue;
+                }
 
                 statements.Add(SyntaxFactory.ExpressionStatement(CreatePropertyAssigmentExpression(parameter, SyntaxFactory.PropertyDeclaration(property.Type, property.Identifier))));
             }

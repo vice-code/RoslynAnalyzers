@@ -56,7 +56,7 @@ namespace ViceCode.Analyzers.Rules
 
             foreach (MemberDeclarationSyntax member in typeDeclaration.Members)
             {
-                if (member.Kind() != SyntaxKind.ConstructorDeclaration)
+                if (!member.IsKind(SyntaxKind.ConstructorDeclaration))
                     continue;
 
                 ConstructorDeclarationSyntax constructorDeclaration = (ConstructorDeclarationSyntax)member;
@@ -76,7 +76,7 @@ namespace ViceCode.Analyzers.Rules
                     continue;
                 }
 
-                List<PropertyDeclarationSyntax> listProperties = Helper.GetClassUnsetProperties(typeDeclaration, constructorDeclaration, ignoreGetOnly: true); // Свойства, которые не заданы в конструкторе.
+                List<PropertyDeclarationSyntax> listProperties = Helper.GetTypeDeclarationUnsetProperties(typeDeclaration, constructorDeclaration, ignoreGetOnly: true); // Свойства, которые не заданы в конструкторе.
 
                 if (listProperties.Count == 0)
                 {
@@ -89,12 +89,18 @@ namespace ViceCode.Analyzers.Rules
             }
 
             IEnumerable<PropertyDeclarationSyntax> rawProperties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
-            List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
 
+            List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
             foreach (PropertyDeclarationSyntax property in rawProperties)
             {
-                if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
+                if (property.AccessorList is null)
+                    continue;
+
+                if ((property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].IsKind(SyntaxKind.GetAccessorDeclaration))
+                    || (property.ExpressionBody is not null))
+                {
                     properties.Remove(property);
+                }
             }
 
             if (properties.Count == 0)
