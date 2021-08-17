@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using ViceCode.Analyzers.Utils;
 
-namespace ViceCode.Analyzers.Rules.DataRowConstructor
+namespace ViceCode.Analyzers.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DataRowConstructorAnalyzer : DiagnosticAnalyzer
@@ -16,14 +16,14 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
         public const string CreateDataRowConstructorDiagnosticId = "VC0000";
         public const string UpdateDataRowConstructorDiagnosticId = "VC0001";
 
+        private const string Category = "Usage";
+
         private static readonly LocalizableString TitleCreate = new LocalizableResourceString(nameof(Resources.AnalyzerTitle), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString MessageFormatCreate = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormat), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString DescriptionCreate = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString TitleUpdate = new LocalizableResourceString(nameof(Resources.AnalyzerTitleUpdate), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString MessageFormatUpdate = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormatUpdate), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString DescriptionUpdate = new LocalizableResourceString(nameof(Resources.AnalyzerDescriptionUpdate), Resources.ResourceManager, typeof(Resources));
-
-        private const string Category = "Usage";
 
         private static readonly DiagnosticDescriptor CreateRule = new DiagnosticDescriptor(CreateDataRowConstructorDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionCreate);
         private static readonly DiagnosticDescriptor UpdateRule = new DiagnosticDescriptor(UpdateDataRowConstructorDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionUpdate);
@@ -92,7 +92,7 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
             }
 
             if (properties.Count == 0)
-                return;     // нечего устанавливать.
+                return; // нечего устанавливать.
 
             context.ReportDiagnostic(Diagnostic.Create(CreateRule, classDeclaration.Identifier.GetLocation()));
         }

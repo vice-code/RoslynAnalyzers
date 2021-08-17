@@ -5,18 +5,18 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace ViceCode.Analyzers.Rules.SqlTypeMatching
+namespace ViceCode.Analyzers.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class SqlTypeMatchingAnalyzer : DiagnosticAnalyzer
     {
         public const string SqlTypeMatchingDiagnosticId = "VC0002";
 
+        private const string Category = "Usage";
+
         private static readonly LocalizableString TitleCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingTitle), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString MessageFormatCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingMessageFormat), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString DescriptionCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingDescription), Resources.ResourceManager, typeof(Resources));
-
-        private const string Category = "Usage";
 
         private static readonly DiagnosticDescriptor SqlTypeMatching = new DiagnosticDescriptor(
             SqlTypeMatchingDiagnosticId,

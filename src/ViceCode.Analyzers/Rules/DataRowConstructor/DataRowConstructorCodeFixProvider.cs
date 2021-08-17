@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using ViceCode.Analyzers.Utils;
 
-namespace ViceCode.Analyzers.Rules.DataRowConstructor
+namespace ViceCode.Analyzers.Rules
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
     public class DataRowConstructorCodeFixProvider : CodeFixProvider
@@ -33,7 +33,7 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
         {
             SyntaxNode root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-            Diagnostic diagnostic = context.Diagnostics.First();
+            Diagnostic diagnostic = context.Diagnostics[0];
             TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
             // Find the type declaration identified by the diagnostic.
@@ -134,7 +134,7 @@ namespace ViceCode.Analyzers.Rules.DataRowConstructor
 
             ConstructorDeclarationSyntax constructor = SyntaxFactory.ConstructorDeclaration(attributes, modifiers, identifier, parameters, null, block);
 
-            SyntaxTrivia fpt = properties.First().GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).First();
+            SyntaxTrivia fpt = properties[0].GetLeadingTrivia().First(t => t.IsKind(SyntaxKind.WhitespaceTrivia));
 
             TypeDeclarationSyntax newClassDexlaration = typeDeclaration.InsertNodesBefore(typeDeclaration.Members.FirstOrDefault(), new[] { constructor.WithLeadingTrivia(fpt) });
 
