@@ -10,22 +10,17 @@ namespace ViceCode.Analyzers.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class SqlTypeMatchingAnalyzer : DiagnosticAnalyzer
     {
-        public const string SqlTypeMatchingDiagnosticId = "VC0002";
+        public const string DiagnosticId = "VC0002";
 
         private const string Category = "Usage";
 
-        private static readonly LocalizableString TitleCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingTitle), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString MessageFormatCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingMessageFormat), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString DescriptionCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingDescription), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingTitle), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingMessageFormat), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingDescription), Resources.ResourceManager, typeof(Resources));
 
-        private static readonly DiagnosticDescriptor SqlTypeMatching = new DiagnosticDescriptor(
-            SqlTypeMatchingDiagnosticId,
-            TitleCreate,
-            MessageFormatCreate,
-            Category,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: DescriptionCreate);
+        private static readonly DiagnosticDescriptor SqlTypeMatching = new(
+            DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning,
+            isEnabledByDefault: true, description: Description);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SqlTypeMatching);
 

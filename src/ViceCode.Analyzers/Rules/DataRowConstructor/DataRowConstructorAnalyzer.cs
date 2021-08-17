@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
@@ -25,10 +26,15 @@ namespace ViceCode.Analyzers.Rules
         private static readonly LocalizableString MessageFormatUpdate = new LocalizableResourceString(nameof(Resources.AnalyzerMessageFormatUpdate), Resources.ResourceManager, typeof(Resources));
         private static readonly LocalizableString DescriptionUpdate = new LocalizableResourceString(nameof(Resources.AnalyzerDescriptionUpdate), Resources.ResourceManager, typeof(Resources));
 
-        private static readonly DiagnosticDescriptor CreateRule = new DiagnosticDescriptor(CreateDataRowConstructorDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionCreate);
-        private static readonly DiagnosticDescriptor UpdateRule = new DiagnosticDescriptor(UpdateDataRowConstructorDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: DescriptionUpdate);
+        private static readonly DiagnosticDescriptor CreateRule = new(
+            CreateDataRowConstructorDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info,
+            isEnabledByDefault: true, description: DescriptionCreate);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(CreateRule, UpdateRule); } }
+        private static readonly DiagnosticDescriptor UpdateRule = new(
+            UpdateDataRowConstructorDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info,
+            isEnabledByDefault: true, description: DescriptionUpdate);
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(CreateRule, UpdateRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -36,19 +42,19 @@ namespace ViceCode.Analyzers.Rules
             // <SnippetRegisterNodeAction>
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(AnalyzeNodeForClass, SyntaxKind.ClassDeclaration);
-            context.RegisterSyntaxNodeAction(AnalyzeNodeForRecord, SyntaxKind.RecordDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeNode<ClassDeclarationSyntax>, SyntaxKind.ClassDeclaration);
+            context.RegisterSyntaxNodeAction(AnalyzeNode<RecordDeclarationSyntax>, SyntaxKind.RecordDeclaration);
             // </SnippetRegisterNodeAction>
         }
 
-        private void AnalyzeNodeForClass(SyntaxNodeAnalysisContext context)
+        private void AnalyzeNode<TNode>(SyntaxNodeAnalysisContext context) where TNode : TypeDeclarationSyntax
         {
-            ClassDeclarationSyntax classDeclaration = (ClassDeclarationSyntax)context.Node;
+            TNode typeDeclaration = (TNode)context.Node;
             SemanticModel semanticModel = context.SemanticModel;
 
-            Lazy<INamedTypeSymbol> dataRowNamedTypeSymbol = new Lazy<INamedTypeSymbol>(() => context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName));
+            Lazy<INamedTypeSymbol> dataRowNamedTypeSymbol = new(() => context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName));
 
-            foreach (MemberDeclarationSyntax member in classDeclaration.Members)
+            foreach (MemberDeclarationSyntax member in typeDeclaration.Members)
             {
                 if (member.Kind() != SyntaxKind.ConstructorDeclaration)
                     continue;
@@ -70,7 +76,7 @@ namespace ViceCode.Analyzers.Rules
                     continue;
                 }
 
-                System.Collections.Generic.List<PropertyDeclarationSyntax> listProperties = Helper.GetClassUnsetProperties(classDeclaration, constructorDeclaration, ignoreGetOnly: true);           // Свойства, которые не заданы в конструкторе.
+                List<PropertyDeclarationSyntax> listProperties = Helper.GetClassUnsetProperties(typeDeclaration, constructorDeclaration, ignoreGetOnly: true); // Свойства, которые не заданы в конструкторе.
 
                 if (listProperties.Count == 0)
                 {
@@ -82,8 +88,8 @@ namespace ViceCode.Analyzers.Rules
                 return;
             }
 
-            System.Collections.Generic.IEnumerable<PropertyDeclarationSyntax> rawProperties = classDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
-            System.Collections.Generic.List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
+            IEnumerable<PropertyDeclarationSyntax> rawProperties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
+            List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
 
             foreach (PropertyDeclarationSyntax property in rawProperties)
             {
@@ -94,63 +100,7 @@ namespace ViceCode.Analyzers.Rules
             if (properties.Count == 0)
                 return; // нечего устанавливать.
 
-            context.ReportDiagnostic(Diagnostic.Create(CreateRule, classDeclaration.Identifier.GetLocation()));
-        }
-
-        private void AnalyzeNodeForRecord(SyntaxNodeAnalysisContext context)
-        {
-            RecordDeclarationSyntax recordDeclaration = (RecordDeclarationSyntax)context.Node;
-            SemanticModel semanticModel = context.SemanticModel;
-
-            Lazy<INamedTypeSymbol> dataRowNamedTypeSymbol = new Lazy<INamedTypeSymbol>(() => context.Compilation.GetTypeByMetadataName(typeof(DataRow).FullName));
-
-            foreach (MemberDeclarationSyntax member in recordDeclaration.Members)
-            {
-                if (member.Kind() != SyntaxKind.ConstructorDeclaration)
-                    continue;
-
-                ConstructorDeclarationSyntax constructorDeclaration = (ConstructorDeclarationSyntax)member;
-                SeparatedSyntaxList<ParameterSyntax> parameters = constructorDeclaration.ParameterList.Parameters;
-                if (parameters.Count != 1)
-                {
-                    // Нас интересует только один параметр в конструкторе.
-                    continue;
-                }
-
-                IParameterSymbol paramSymbol = semanticModel.GetDeclaredSymbol(parameters[0]);
-                ITypeSymbol paramTypeSymbol = paramSymbol.Type;
-
-                if (!SymbolEqualityComparer.Default.Equals(dataRowNamedTypeSymbol.Value, paramTypeSymbol))
-                {
-                    // Единственный параметр конструктора не является DataRow, ищем дальше
-                    continue;
-                }
-
-                System.Collections.Generic.List<PropertyDeclarationSyntax> listProperties = Helper.GetClassUnsetProperties(recordDeclaration, constructorDeclaration, ignoreGetOnly: true);           // Свойства, которые не заданы в конструкторе.
-
-                if (listProperties.Count == 0)
-                {
-                    // Список пуст - нечего добавлять
-                    return;
-                }
-
-                context.ReportDiagnostic(Diagnostic.Create(UpdateRule, constructorDeclaration.Identifier.GetLocation()));
-                return;
-            }
-
-            System.Collections.Generic.IEnumerable<PropertyDeclarationSyntax> rawProperties = recordDeclaration.Members.OfType<PropertyDeclarationSyntax>(); // Берём только свойства.
-            System.Collections.Generic.List<PropertyDeclarationSyntax> properties = rawProperties.ToList();
-
-            foreach (PropertyDeclarationSyntax property in rawProperties)
-            {
-                if (property.AccessorList.Accessors.Count == 1 && property.AccessorList.Accessors[0].Kind() == SyntaxKind.GetAccessorDeclaration)
-                    properties.Remove(property);
-            }
-
-            if (properties.Count == 0)
-                return;     // нечего устанавливать.
-
-            context.ReportDiagnostic(Diagnostic.Create(CreateRule, recordDeclaration.Identifier.GetLocation()));
+            context.ReportDiagnostic(Diagnostic.Create(CreateRule, typeDeclaration.Identifier.GetLocation()));
         }
     }
 }

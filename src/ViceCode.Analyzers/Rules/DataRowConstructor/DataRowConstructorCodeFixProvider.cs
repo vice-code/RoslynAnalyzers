@@ -102,12 +102,12 @@ namespace ViceCode.Analyzers.Rules
         private async Task<Document> CreateDataRowConstructor(Document document, TypeDeclarationSyntax typeDeclaration, CancellationToken ct)
         {
             // attributes;
-            SyntaxList<AttributeListSyntax> attributes = new SyntaxList<AttributeListSyntax>();
+            SyntaxList<AttributeListSyntax> attributes = new();
 
             // Modifiers;
             const string publicText = "public ";
             SyntaxToken publicModifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, publicText, publicText, SyntaxTriviaList.Empty);
-            SyntaxTokenList modifiers = new SyntaxTokenList(publicModifier);
+            SyntaxTokenList modifiers = new(publicModifier);
 
             // Identifier;
             SyntaxToken identifier = SyntaxFactory.Identifier(SyntaxTriviaList.Empty, SyntaxKind.PublicKeyword, typeDeclaration.Identifier.Text, typeDeclaration.Identifier.ValueText, SyntaxTriviaList.Empty)/*.WithLeadingTrivia().WithTrailingTrivia()*/;
@@ -120,7 +120,7 @@ namespace ViceCode.Analyzers.Rules
 
             // Body block
             List<PropertyDeclarationSyntax> properties = typeDeclaration.Members.OfType<PropertyDeclarationSyntax>().ToList();
-            List<StatementSyntax> statements = new List<StatementSyntax>(properties.Count);
+            List<StatementSyntax> statements = new(properties.Count);
 
             foreach (PropertyDeclarationSyntax property in properties)
             {

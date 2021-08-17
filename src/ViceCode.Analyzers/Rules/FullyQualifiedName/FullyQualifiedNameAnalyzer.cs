@@ -10,22 +10,17 @@ namespace ViceCode.Analyzers.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class FullyQualifiedNameAnalyzer : DiagnosticAnalyzer
     {
-        public const string FullyQualifiedNameDiagnosticId = "VC0003";
+        public const string DiagnosticId = "VC0003";
 
         private const string Category = "Usage";
 
-        private static readonly LocalizableString TitleCreate = "Avoid fully qualified name";
-        private static readonly LocalizableString MessageFormatCreate = "Method contains fully qualified name.";
+        private static readonly LocalizableString Title = "Avoid fully qualified name";
+        private static readonly LocalizableString MessageFormat = "Method contains fully qualified name.";
         private static readonly LocalizableString DescriptionCreate = string.Empty;
 
         private static readonly DiagnosticDescriptor Rule = new(
-            FullyQualifiedNameDiagnosticId,
-            TitleCreate,
-            MessageFormatCreate,
-            Category,
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: DescriptionCreate);
+            DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning,
+            isEnabledByDefault: true, description: DescriptionCreate);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
