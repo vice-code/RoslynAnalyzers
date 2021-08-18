@@ -91,10 +91,8 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="53967685.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	<Content Include="..\..\images\logo.png">
+      <Link>Logo.png</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
