@@ -52,23 +52,36 @@ namespace ViceCode.Analyzers.Rules
                     && SymbolEqualityComparer.Default.Equals(dbParameterMetaName, valuePropertySymbol.OverriddenProperty.ContainingType)
                     && addExpression.ArgumentList.Arguments[1].Expression is MemberAccessExpressionSyntax sqlType)
                 {
-                    SpecialType rightExpressionType = 0;
+                    SpecialType rightExpressionType = SpecialType.None;
 
-                    if (expression.Right is IdentifierNameSyntax identifierExpression)
-                        rightExpressionType = context.SemanticModel.GetTypeInfo(identifierExpression).Type.SpecialType;
-
-                    else if (expression.Right is BinaryExpressionSyntax binaryExpression)
+                    switch (expression.Right)
                     {
-                        if (binaryExpression.Left is CastExpressionSyntax leftCast)
-                            rightExpressionType = context.SemanticModel.GetTypeInfo(leftCast.Expression).Type.SpecialType;
-                        else
-                            rightExpressionType = context.SemanticModel.GetTypeInfo(binaryExpression.Left).Type.SpecialType;
+                        case IdentifierNameSyntax identifierExpression:
+                            {
+                                rightExpressionType = context.SemanticModel.GetTypeInfo(identifierExpression).Type.SpecialType;
+                                break;
+                            }
+                        case BinaryExpressionSyntax binaryExpression:
+                            {
+                                if (binaryExpression.Left is CastExpressionSyntax leftCast)
+                                    rightExpressionType = context.SemanticModel.GetTypeInfo(leftCast.Expression).Type.SpecialType;
+                                else
+                                    rightExpressionType = context.SemanticModel.GetTypeInfo(binaryExpression.Left).Type.SpecialType;
+                                break;
+                            }
+                        case ConditionalExpressionSyntax conditionalExpression:
+                            {
+                                rightExpressionType = context.SemanticModel.GetTypeInfo(conditionalExpression.WhenTrue).Type.SpecialType;
+                                break;
+                            }
+                        case ExpressionSyntax expressionExpression: // Все остальные expressions
+                            {
+                                rightExpressionType = context.SemanticModel.GetTypeInfo(expressionExpression).Type.SpecialType;
+                                break;
+                            }
                     }
 
-                    else if (expression.Right is ExpressionSyntax expressionExpression)
-                        rightExpressionType = context.SemanticModel.GetTypeInfo(expressionExpression).Type.SpecialType;
-
-                    if (rightExpressionType is SpecialType.System_Object or SpecialType.None)
+                    if (rightExpressionType is SpecialType.None or SpecialType.System_Object)
                         return;
 
                     if (!IsValid(rightExpressionType, sqlType.Name.Identifier.ValueText))
@@ -133,18 +146,22 @@ namespace ViceCode.Analyzers.Rules
             return false;
         }
 
-        private bool IsInt(SpecialType type) =>
-            type is SpecialType.System_Int32
-            or SpecialType.System_UInt16
-            or SpecialType.System_Int16
-            or SpecialType.System_Byte
-            or SpecialType.System_UInt32
-            or SpecialType.System_Int64
-            or SpecialType.System_UInt64;
+        private bool IsInt(SpecialType type)
+        {
+            return type is SpecialType.System_Int32
+                or SpecialType.System_UInt16
+                or SpecialType.System_Int16
+                or SpecialType.System_Byte
+                or SpecialType.System_UInt32
+                or SpecialType.System_Int64
+                or SpecialType.System_UInt64;
+        }
 
-        private bool IsFloating(SpecialType type) =>
-            type is SpecialType.System_Single
-            or SpecialType.System_Double
-            or SpecialType.System_Decimal;
+        private bool IsFloating(SpecialType type)
+        {
+            return type is SpecialType.System_Single
+                or SpecialType.System_Double
+                or SpecialType.System_Decimal;
+        }
     }
 }
