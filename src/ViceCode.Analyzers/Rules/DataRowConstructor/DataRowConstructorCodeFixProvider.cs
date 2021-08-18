@@ -18,7 +18,7 @@ namespace ViceCode.Analyzers.Rules
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(DataRowConstructorCodeFixProvider)), Shared]
     public class DataRowConstructorCodeFixProvider : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId, DataRowConstructorAnalyzer.UpdateDataRowConstructorDiagnosticId);
+        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(DataRowConstructorAnalyzer.CreateDiagnosticId, DataRowConstructorAnalyzer.UpdateDiagnosticId);
 
         public sealed override FixAllProvider GetFixAllProvider()
         {
@@ -36,7 +36,7 @@ namespace ViceCode.Analyzers.Rules
             // Find the type declaration identified by the diagnostic.
             TypeDeclarationSyntax typeDeclation = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
 
-            if (diagnostic.Id == DataRowConstructorAnalyzer.CreateDataRowConstructorDiagnosticId)
+            if (diagnostic.Id == DataRowConstructorAnalyzer.CreateDiagnosticId)
             {
                 string title = string.Format("Generate {0}(DataRow row) constructor", typeDeclation.Identifier.ValueText);
                 // Register a code action that will invoke the fix.

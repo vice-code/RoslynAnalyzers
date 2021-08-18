@@ -14,8 +14,8 @@ namespace ViceCode.Analyzers.Rules
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DataRowConstructorAnalyzer : DiagnosticAnalyzer
     {
-        public const string CreateDataRowConstructorDiagnosticId = "VC0000";
-        public const string UpdateDataRowConstructorDiagnosticId = "VC0001";
+        public const string CreateDiagnosticId = "VC0000";
+        public const string UpdateDiagnosticId = "VC0001";
 
         private const string Category = "Usage";
 
@@ -27,11 +27,11 @@ namespace ViceCode.Analyzers.Rules
         private static readonly LocalizableString DescriptionUpdate = new LocalizableResourceString(nameof(Resources.AnalyzerDescriptionUpdate), Resources.ResourceManager, typeof(Resources));
 
         private static readonly DiagnosticDescriptor CreateRule = new(
-            CreateDataRowConstructorDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info,
+            CreateDiagnosticId, TitleCreate, MessageFormatCreate, Category, DiagnosticSeverity.Info,
             isEnabledByDefault: true, description: DescriptionCreate);
 
         private static readonly DiagnosticDescriptor UpdateRule = new(
-            UpdateDataRowConstructorDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info,
+            UpdateDiagnosticId, TitleUpdate, MessageFormatUpdate, Category, DiagnosticSeverity.Info,
             isEnabledByDefault: true, description: DescriptionUpdate);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(CreateRule, UpdateRule);
