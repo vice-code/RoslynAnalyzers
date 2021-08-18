@@ -32,13 +32,8 @@ namespace ViceCode.Analyzers.Utils
                 return listProperties;
 
             // Search for properties that are not set in the constructor.
-            foreach (StatementSyntax statement in constructorDeclaration.Body.Statements)
+            foreach (ExpressionStatementSyntax expression in constructorDeclaration.Body.DescendantNodes().OfType<ExpressionStatementSyntax>())
             {
-                if (!statement.IsKind(SyntaxKind.ExpressionStatement))
-                    continue;
-
-                ExpressionStatementSyntax expression = (ExpressionStatementSyntax)statement;
-
                 if (!expression.Expression.IsKind(SyntaxKind.SimpleAssignmentExpression))
                     continue;
 
