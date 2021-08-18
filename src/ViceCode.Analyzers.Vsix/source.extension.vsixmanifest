@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="ViceCode.Analyzers.35f903bc-07ae-4a28-97ce-9235da0c513c" Version="1.2.0.0" Language="en-US" Publisher="ViceCode"/>
+        <Identity Id="ViceCode.Analyzers.35f903bc-07ae-4a28-97ce-9235da0c513c" Version="1.3.0.0" Language="en-US" Publisher="ViceCode"/>
         <DisplayName>ViceCode.Analyzers</DisplayName>
         <Description xml:space="preserve">Simplifies the creation of constructors for classes that take and get a value from a DataRowSimplifies the creation of constructors for classes that take and get a value from a DataRow</Description>
         <MoreInfo>https://github.com/vice-code/RoslynAnalyzers</MoreInfo>
