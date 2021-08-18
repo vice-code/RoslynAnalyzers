@@ -19,7 +19,7 @@ namespace ViceCode.Analyzers.Rules
         private static readonly LocalizableString DescriptionCreate = string.Empty;
 
         private static readonly DiagnosticDescriptor Rule = new(
-            DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning,
+            DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Info,
             isEnabledByDefault: true, description: DescriptionCreate);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
