@@ -5,27 +5,22 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace ViceCode.Analyzers
+namespace ViceCode.Analyzers.Rules
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class SqlTypeMatchingAnalyzer : DiagnosticAnalyzer
     {
-        public const string SqlTypeMatchingDiagnosticId = "VC0002";
-
-        private static readonly LocalizableString TitleCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingTitle), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString MessageFormatCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingMessageFormat), Resources.ResourceManager, typeof(Resources));
-        private static readonly LocalizableString DescriptionCreate = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingDescription), Resources.ResourceManager, typeof(Resources));
+        public const string DiagnosticId = "VC0002";
 
         private const string Category = "Usage";
 
-        private static DiagnosticDescriptor SqlTypeMatching = new DiagnosticDescriptor(
-            SqlTypeMatchingDiagnosticId,
-            TitleCreate,
-            MessageFormatCreate,
-            Category, 
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true,
-            description: DescriptionCreate);
+        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingTitle), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingMessageFormat), Resources.ResourceManager, typeof(Resources));
+        private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.SqlTypeMatchingDescription), Resources.ResourceManager, typeof(Resources));
+
+        private static readonly DiagnosticDescriptor SqlTypeMatching = new(
+            DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning,
+            isEnabledByDefault: true, description: Description);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SqlTypeMatching);
 
@@ -38,15 +33,15 @@ namespace ViceCode.Analyzers
 
         private void AnalyzeSqlTypeMatching(SyntaxNodeAnalysisContext context)
         {
-            var expression = (AssignmentExpressionSyntax)context.Node;
+            AssignmentExpressionSyntax expression = (AssignmentExpressionSyntax)context.Node;
 
             if (expression.Left is MemberAccessExpressionSyntax leftExpression && leftExpression.Expression is InvocationExpressionSyntax addExpression)
             {
                 if (addExpression.ArgumentList.Arguments.Count < 1)
                     return;
 
-                var dbParameterMetaName = context.Compilation.GetTypeByMetadataName(typeof(DbParameter).FullName);
-                var valueSymbol = context.SemanticModel.GetSymbolInfo(leftExpression).Symbol; // command.Parameters.Add().|Value|
+                INamedTypeSymbol dbParameterMetaName = context.Compilation.GetTypeByMetadataName(typeof(DbParameter).FullName);
+                ISymbol valueSymbol = context.SemanticModel.GetSymbolInfo(leftExpression).Symbol; // command.Parameters.Add().|Value|
 
                 if (valueSymbol is null)
                     return;
@@ -57,28 +52,41 @@ namespace ViceCode.Analyzers
                     && SymbolEqualityComparer.Default.Equals(dbParameterMetaName, valuePropertySymbol.OverriddenProperty.ContainingType)
                     && addExpression.ArgumentList.Arguments[1].Expression is MemberAccessExpressionSyntax sqlType)
                 {
-                    SpecialType rightExpressionType = 0;
+                    SpecialType rightExpressionType = SpecialType.None;
 
-                    if (expression.Right is IdentifierNameSyntax identifierExpression)
-                        rightExpressionType = context.SemanticModel.GetTypeInfo(identifierExpression).Type.SpecialType;
-
-                    else if (expression.Right is BinaryExpressionSyntax binaryExpression)
+                    switch (expression.Right)
                     {
-                        if (binaryExpression.Left is CastExpressionSyntax leftCast)
-                            rightExpressionType = context.SemanticModel.GetTypeInfo(leftCast.Expression).Type.SpecialType;
-                        else
-                            rightExpressionType = context.SemanticModel.GetTypeInfo(binaryExpression.Left).Type.SpecialType;
+                        case IdentifierNameSyntax identifierExpression:
+                            {
+                                rightExpressionType = context.SemanticModel.GetTypeInfo(identifierExpression).Type.SpecialType;
+                                break;
+                            }
+                        case BinaryExpressionSyntax binaryExpression:
+                            {
+                                if (binaryExpression.Left is CastExpressionSyntax leftCast)
+                                    rightExpressionType = context.SemanticModel.GetTypeInfo(leftCast.Expression).Type.SpecialType;
+                                else
+                                    rightExpressionType = context.SemanticModel.GetTypeInfo(binaryExpression.Left).Type.SpecialType;
+                                break;
+                            }
+                        case ConditionalExpressionSyntax conditionalExpression:
+                            {
+                                rightExpressionType = context.SemanticModel.GetTypeInfo(conditionalExpression.WhenTrue).Type.SpecialType;
+                                break;
+                            }
+                        case ExpressionSyntax expressionExpression: // Все остальные expressions
+                            {
+                                rightExpressionType = context.SemanticModel.GetTypeInfo(expressionExpression).Type.SpecialType;
+                                break;
+                            }
                     }
 
-                    else if (expression.Right is ExpressionSyntax expressionExpression)
-                        rightExpressionType = context.SemanticModel.GetTypeInfo(expressionExpression).Type.SpecialType;
-
-                    if (rightExpressionType is SpecialType.System_Object or SpecialType.None)
+                    if (rightExpressionType is SpecialType.None or SpecialType.System_Object)
                         return;
 
                     if (!IsValid(rightExpressionType, sqlType.Name.Identifier.ValueText))
                     {
-                        var diagnostic = Diagnostic.Create(SqlTypeMatching, expression.GetLocation());
+                        Diagnostic diagnostic = Diagnostic.Create(SqlTypeMatching, expression.GetLocation());
                         context.ReportDiagnostic(diagnostic);
                     }
                 }
@@ -138,18 +146,22 @@ namespace ViceCode.Analyzers
             return false;
         }
 
-        private bool IsInt(SpecialType type) =>
-            type is SpecialType.System_Int32
-            or SpecialType.System_UInt16
-            or SpecialType.System_Int16
-            or SpecialType.System_Byte
-            or SpecialType.System_UInt32
-            or SpecialType.System_Int64
-            or SpecialType.System_UInt64;
+        private bool IsInt(SpecialType type)
+        {
+            return type is SpecialType.System_Int32
+                or SpecialType.System_UInt16
+                or SpecialType.System_Int16
+                or SpecialType.System_Byte
+                or SpecialType.System_UInt32
+                or SpecialType.System_Int64
+                or SpecialType.System_UInt64;
+        }
 
-        private bool IsFloating(SpecialType type) =>
-            type is SpecialType.System_Single
-            or SpecialType.System_Double
-            or SpecialType.System_Decimal;
+        private bool IsFloating(SpecialType type)
+        {
+            return type is SpecialType.System_Single
+                or SpecialType.System_Double
+                or SpecialType.System_Decimal;
+        }
     }
 }
